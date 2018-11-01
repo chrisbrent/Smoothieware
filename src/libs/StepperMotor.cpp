@@ -15,7 +15,9 @@
 
 StepperMotor::StepperMotor(Pin &step, Pin &dir, Pin &en) : step_pin(step), dir_pin(dir), en_pin(en)
 {
-    set_high_on_debug(en.port_number, en.pin);
+    if(en.connected()) {
+        set_high_on_debug(en.port_number, en.pin);
+    }
 
     steps_per_mm         = 1.0F;
     max_rate             = 50.0F;
@@ -23,10 +25,14 @@ StepperMotor::StepperMotor(Pin &step, Pin &dir, Pin &en) : step_pin(step), dir_p
     last_milestone_steps = 0;
     last_milestone_mm    = 0.0F;
     current_position_steps= 0;
-    enable(false);
     moving= false;
     acceleration= NAN;
     selected= true;
+    extruder= false;
+
+    enable(false);
+    unstep(); // initialize step pin
+    set_direction(false); // initialize dir pin
 
     this->register_for_event(ON_HALT);
     this->register_for_event(ON_ENABLE);
@@ -48,7 +54,15 @@ void StepperMotor::on_halt(void *argument)
 
 void StepperMotor::on_enable(void *argument)
 {
-    enable(argument != nullptr);
+    // argument is a uin32_t where bit0 is on or off, and bit 1:X, 2:Y, 3:Z, 4:A, 5:B, 6:C etc
+    // for now if bit0 is 1 we turn all on, if 0 we turn all off otherwise we turn selected axis off
+    uint32_t bm= (uint32_t)argument;
+    if(bm == 0x01) {
+        enable(true);
+
+    }else if(bm == 0 || ((bm&0x01) == 0 && ((bm&(0x02<<motor_id)) != 0)) ) {
+        enable(false);
+    }
 }
 
 void StepperMotor::change_steps_per_mm(float new_steps)
@@ -85,6 +99,8 @@ int32_t StepperMotor::steps_to_target(float target)
 }
 
 // Does a manual step pulse, used for direct encoder control of a stepper
+// NOTE this is experimental and may change and/or be reomved in the future, it is an unsupported feature.
+// use at your own risk
 void StepperMotor::manual_step(bool dir)
 {
     if(!is_enabled()) enable(true);

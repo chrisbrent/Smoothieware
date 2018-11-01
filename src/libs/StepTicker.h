@@ -21,9 +21,8 @@
 class StepperMotor;
 class Block;
 
-// handle 2.30 Fixed point
-#define STEPTICKER_FPSCALE (1<<30)
-#define STEPTICKER_TOFP(x) ((int32_t)roundf((float)(x)*STEPTICKER_FPSCALE))
+// handle 2.62 Fixed point
+#define STEPTICKER_FPSCALE (1LL<<62)
 #define STEPTICKER_FROMFP(x) ((float)(x)/STEPTICKER_FPSCALE)
 
 class StepTicker{
@@ -35,6 +34,7 @@ class StepTicker{
         int register_motor(StepperMotor* motor);
         float get_frequency() const { return frequency; }
         void unstep_tick();
+        const Block *get_current_block() const { return current_block; }
 
         void step_tick (void);
         void handle_finish (void);
@@ -56,6 +56,7 @@ class StepTicker{
         std::bitset<k_max_actuators> unstep;
 
         Block *current_block;
+        uint32_t current_tick{0};
 
         struct {
             volatile bool running:1;

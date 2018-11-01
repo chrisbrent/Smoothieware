@@ -5,8 +5,6 @@
       You should have received a copy of the GNU General Public License along with Smoothie. If not, see <http://www.gnu.org/licenses/>.
 */
 
-using namespace std;
-#include <vector>
 #include "libs/nuts_bolts.h"
 #include "libs/Module.h"
 #include "libs/Kernel.h"
@@ -61,7 +59,7 @@ void SlowTicker::set_frequency( int frequency ){
 // The actual interrupt being called by the timer, this is where work is done
 void SlowTicker::tick(){
 
-    // Call all hooks that need to be called ( bresenham )
+    // Call all hooks that need to be called
     for (Hook* hook : this->hooks){
         hook->countdown -= this->interval;
         if (hook->countdown < 0)
@@ -71,7 +69,7 @@ void SlowTicker::tick(){
         }
     }
 
-    // deduct tick time from secound counter
+    // deduct tick time from second counter
     flag_1s_count -= this->interval;
     // if a whole second has elapsed,
     if (flag_1s_count < 0)
